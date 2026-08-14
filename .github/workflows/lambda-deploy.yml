@@ -21,61 +21,52 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'release' && github.event.action == 'released' && 'Production' || github.event_name == 'push' && 'Development' || inputs.environment }}
     steps:
-      # Check out a copy of your repository.
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Use parameter expansion to make environment lowercase.
       - name: Downcase environment
         run: |
           echo "ENVIRONMENT_LC=${ENVIRONMENT,,}" >>${GITHUB_ENV}
 
-      # Get the base domain from the APP_URL environment variable.
       - name: Get base domain from APP_URL
         run: |
-          echo "BASE_DOMAIN=$(echo ${{ vars.APP_URL }} | sed 's/http[s]*:\/\///')" >>${GITHUB_ENV}
+          echo "BASE_DOMAIN=$(echo ${{ vars.APP_URL }} | sed 's|https\?://||')" >>${GITHUB_ENV}
 
-      # - name: Create JWT Tokens
-      #   run: |
-      #     mkdir storage/certs
-      #     cat << EOF > storage/certs/jwt-rsa-4096-public.pem
-      #     ${{ secrets.JWT_PUBLIC_KEY_CONTENTS }}
-      #     EOF
-      #     cat << EOF > storage/certs/jwt-rsa-4096-private.pem
-      #     ${{ secrets.JWT_PRIVATE_KEY_CONTENTS }}
-      #     EOF
-
-      # Set up PHP environment.
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: "8.5"
 
-      # Install Composer dependencies with the specified options.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
       - name: Install Composer dependencies
-        uses: "ramsey/composer-install@v2"
+        uses: ramsey/composer-install@v2
         with:
           composer-options: "--prefer-dist --optimize-autoloader --no-dev"
 
       - name: Install NPM dependencies
-        run: npm install
+        run: npm ci
 
       - name: Compile assets
         run: npm run build
 
-      # Deploy your application to AWS Lambda using the Serverless Framework.
+      - name: Install osls + Lift
+        run: |
+          npm install -g osls@4
+          npx serverless plugin install -n serverless-lift
+
       - name: Deploy to AWS Lambda
-        uses: serverless/github-action@v4
-        with:
-          args: -c "serverless plugin install -n serverless-lift && serverless deploy --stage=${{ env.ENVIRONMENT_LC }}"
-          entrypoint: /bin/sh
+        run: serverless deploy --stage=${{ env.ENVIRONMENT_LC }}
         env:
-          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
           AWS_CERTIFICATE_ARN: ${{ vars.AWS_CERTIFICATE_ARN }}
           BASE_DOMAIN: ${{ env.BASE_DOMAIN }}
-          
           APP_KEY: ${{ secrets.APP_KEY }}
           APP_NAME: ${{ vars.APP_NAME }}
           APP_URL: ${{ vars.APP_URL }}
@@ -103,12 +94,10 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
 
       - name: Run Deployment Tasks
-        uses: serverless/github-action@v4
-        with:
-          args: bref:cli --args="deploy" --stage=${{ env.ENVIRONMENT_LC }}
+        run: serverless bref:cli --args="deploy" --stage=${{ env.ENVIRONMENT_LC }}
         env:
-          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
           BASE_DOMAIN: ${{ env.BASE_DOMAIN }}
           AWS_CERTIFICATE_ARN: ${{ vars.AWS_CERTIFICATE_ARN }}

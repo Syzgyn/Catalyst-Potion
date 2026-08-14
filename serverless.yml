@@ -1,7 +1,3 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: catalyst
-# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
-app: potion
 service: potion
 
 provider:
@@ -93,9 +89,9 @@ constructs:
         type: queue
         worker:
             handler: Bref\LaravelBridge\Queue\QueueHandler
-            runtime: php-84
+            runtime: php-85
             # layers:
-            #     - ${bref-extra:gd-php-84}
+            #     - ${bref-extra:gd-php-85}
             timeout: 50 # seconds
             environment:
                 AUDITING_CONSOLE: true # Enables audit logging for jobs
@@ -108,9 +104,9 @@ functions:
     # This function runs the Laravel website/API
     web:
         handler: public/index.php
-        runtime: php-84-fpm
+        runtime: php-85-fpm
         layers:
-            - ${bref-extra:gd-php-84}
+            - ${bref-extra:gd-php-85}
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
         events:
             - httpApi: '*'
@@ -118,9 +114,9 @@ functions:
     # This function lets us run artisan commands in Lambda
     artisan:
         handler: artisan
-        runtime: php-84-console
+        runtime: php-85-console
         layers:
-            - ${bref-extra:gd-php-84}
+            - ${bref-extra:gd-php-85}
         timeout: 720 # in seconds
         events:
            - schedule:

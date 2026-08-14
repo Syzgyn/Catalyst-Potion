@@ -45,8 +45,10 @@ class Kernel extends HttpKernel
      * @var array<int, class-string|string>
      */
     protected $middleware = [
-        TrustHosts::class,
+        // TrustProxies must run before TrustHosts so X-Forwarded-Host
+        // (CloudFront) is applied before the Host header is validated.
         TrustProxies::class,
+        TrustHosts::class,
         HandleCors::class,
         PreventRequestsDuringMaintenance::class,
         ValidatePostSize::class,

@@ -33,7 +33,7 @@ class AppPanelProvider extends CommonPanelProvider
             ->passwordReset()
             ->emailVerification()
             ->colors([
-                'primary' => Color::Violet,
+                'primary' => Color::Emerald,
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->authMiddleware([

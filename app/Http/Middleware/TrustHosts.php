@@ -19,6 +19,8 @@ class TrustHosts extends Middleware
     {
         return [
             $this->allSubdomainsOfApplicationUrl(),
+            // Lift website preview / default distribution URL
+            '^.*\.cloudfront\.net$',
         ];
     }
 }
