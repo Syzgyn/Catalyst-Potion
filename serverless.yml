@@ -4,6 +4,14 @@ provider:
     name: aws
     # The AWS region in which to deploy (us-east-1 is the default)
     region: us-east-1
+    iam:
+        role:
+            statements:
+                - Effect: Allow
+                  Action:
+                      - ses:SendEmail
+                      - ses:SendRawEmail
+                  Resource: "*"
     # Environment variables
     environment:
         APP_ENV: ${sls:stage}
@@ -24,7 +32,7 @@ provider:
         LOG_CHANNEL: ${env:LOG_CHANNEL, 'lambda-stack'}
         MAIL_FROM_ADDRESS: ${env:MAIL_FROM_ADDRESS, ''}
         MAIL_FROM_NAME: ${env:MAIL_FROM_NAME, ''}
-        MAIL_MAILER: ${env:MAIL_MAILER, 'log'}
+        MAIL_MAILER: ${env:MAIL_MAILER, 'ses'}
         MAIL_TICKETS_ADDRESS: ${env:MAIL_TICKETS_ADDRESS, ''}
         MAIL_TICKETS_NAME: ${env:MAIL_TICKETS_NAME, ''}
         ORG_NAME: ${env:ORG_NAME, ''}
