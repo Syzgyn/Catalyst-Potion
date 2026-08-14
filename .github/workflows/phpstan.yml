@@ -23,7 +23,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.4"
+          php-version: "8.5"
 
       - name: Install Composer dependencies
         uses: "ramsey/composer-install@v2"
@@ -34,4 +34,4 @@ jobs:
         uses: php-actions/phpstan@v3
         with:
           path: app/
-          php_version: "8.4"
+          php_version: "8.5"
