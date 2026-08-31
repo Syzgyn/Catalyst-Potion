@@ -47,7 +47,8 @@ class EditPageContent extends EditRecord
                     }),
                 Grid::make(1)
                     ->schema($this->generatePageSchemas()),
-            ]);
+            ])
+            ->columns(1);
     }
 
     /**
