@@ -43,7 +43,7 @@ class EditPageContent extends EditRecord
                     ->live()
                     ->afterStateHydrated(function (Select $component) {
                         // default() doesn't work. This sets the default value when the array is empty
-                        $component->state(PageContentEnum::AppDashboard->value);
+                        $component->state(PageContentEnum::AppDashboard);
                     }),
                 Grid::make(1)
                     ->schema($this->generatePageSchemas()),
@@ -76,7 +76,7 @@ class EditPageContent extends EditRecord
                 ->columnSpanFull();
 
             $output[] = Section::make($schema)
-                ->visible(fn (Get $get) => $get('page') === $page->value)
+                ->visible(fn (Get $get) => $get('page') === $page)
                 ->relationship($relationship)
                 ->mutateRelationshipDataBeforeCreateUsing(fn (array $data): array => array_merge($data, ['page' => $page->value]));
         }
