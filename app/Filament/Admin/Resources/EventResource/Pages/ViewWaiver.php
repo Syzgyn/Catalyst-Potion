@@ -9,7 +9,9 @@ use App\Models\Event;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 
 class ViewWaiver extends ViewRecord
@@ -19,8 +21,6 @@ class ViewWaiver extends ViewRecord
     protected static ?string $navigationLabel = 'Waiver';
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
-
-    protected string $view = 'filament.admin.resources.event-resource.pages.view-waiver';
 
     public bool $hasWaiver = false;
 
@@ -42,6 +42,21 @@ class ViewWaiver extends ViewRecord
     public function getBreadcrumb(): string
     {
         return 'Waiver';
+    }
+
+    public function content(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Callout::make('A waiver cannot be modified once it has been signed.')
+                    ->color('info')
+                    ->visible(fn (): bool => $this->getRecord()->completedWaivers()->exists()),
+                $this->getFormContentComponent()
+                    ->visible(fn (): bool => $this->hasWaiver),
+                Text::make('There is currently no waiver for this event.')
+                    ->visible(fn (): bool => ! $this->hasWaiver),
+                $this->getRelationManagersContentComponent(),
+            ]);
     }
 
     public function form(Schema $schema): Schema

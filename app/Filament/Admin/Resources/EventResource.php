@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\EventResource\Pages;
+use App\Filament\Admin\Resources\EventResource\RelationManagers\CompletedWaiversRelationManager;
 use App\Models\Event;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -247,6 +248,7 @@ class EventResource extends Resource
     public static function getRelations(): array
     {
         return [
+            CompletedWaiversRelationManager::class,
             AuditsRelationManager::class,
         ];
     }

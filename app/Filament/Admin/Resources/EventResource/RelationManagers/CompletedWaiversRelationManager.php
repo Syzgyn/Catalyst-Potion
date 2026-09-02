@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Resources\EventResource\RelationManagers;
 
+use App\Filament\Admin\Resources\EventResource\Pages\ViewWaiver;
 use App\Filament\Tables\Columns\UserColumn;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -13,10 +14,16 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class CompletedWaiversRelationManager extends RelationManager
 {
     protected static string $relationship = 'completedWaivers';
+
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        return $pageClass === ViewWaiver::class;
+    }
 
     public function form(Schema $schema): Schema
     {
