@@ -71,6 +71,7 @@ class ViewWaiver extends ViewRecord
                         ->required()
                         ->columnSpanFull(),
                 ])
+                    ->columns(1)
                     ->relationship('waiver'),
             ]);
     }
