@@ -104,8 +104,14 @@ class PurchaseTickets extends Page
         }
 
         $this->waiver = Event::getCurrentEvent()?->waiver;
-        // Call here so we get an accurate ticket count
-        $ticketStep = $this->buildTicketsStep();
+        $ticketSchema = $this->buildTicketSchema();
+
+        if ($this->ticketCount === 0) {
+            return $schema
+                ->components($ticketSchema)
+                ->statePath('data');
+        }
+
         $submitString = <<<'BLADE'
             <x-filament::button
                 type="submit"
@@ -116,22 +122,21 @@ class PurchaseTickets extends Page
             </x-filament::button>
         BLADE;
 
-        if ($this->ticketCount === 0) {
-            $submitString = '';
-        }
-
         return $schema
             ->components([
                 Wizard::make([
                     $this->buildWaiverStep(),
-                    $ticketStep,
+                    Step::make('Select Tickets')->schema($ticketSchema),
                 ])
                     ->submitAction(new HtmlString(Blade::render($submitString))),
             ])
             ->statePath('data');
     }
 
-    protected function buildTicketsStep(): Step
+    /**
+     * @return array<int, mixed>
+     */
+    protected function buildTicketSchema(): array
     {
         /** @var EloquentCollection<int,TicketType> $tickets */
         $tickets = TicketType::query()->currentEvent()->available()->get();
@@ -168,11 +173,13 @@ class PurchaseTickets extends Page
             $nextTicketSaleDate = Event::getCurrentEvent()?->nextTicketSaleDate?->timezone('America/New_York')->format('F jS, Y g:i A T');
             if ($nextTicketSaleDate) {
                 $ticketSchema[] = Placeholder::make('noTickets')
-                    ->label('')
+                    ->hiddenLabel()
+                    ->dehydrated(false)
                     ->content(new HtmlString('<h1 class="text-2xl text-center">Tickets will be available for purchase on ' . $nextTicketSaleDate . '</h1>'));
             } else {
                 $ticketSchema[] = Placeholder::make('noTickets')
-                    ->label('')
+                    ->hiddenLabel()
+                    ->dehydrated(false)
                     ->content(new HtmlString('<h1 class="text-2xl text-center">There are no tickets available for this event.</h1>'));
             }
         }
@@ -200,10 +207,10 @@ class PurchaseTickets extends Page
             $schema = $ticketSchema;
         }
 
-        $this->ticketCount = $tickets->count() + $reserved->count();
+        $purchasableTickets = $tickets->filter(fn (TicketType $ticket) => $ticket->remainingTicketCount > 0);
+        $this->ticketCount = $purchasableTickets->count() + $reserved->count();
 
-        return Step::make('Select Tickets')
-            ->schema($schema);
+        return $schema;
     }
 
     /**
