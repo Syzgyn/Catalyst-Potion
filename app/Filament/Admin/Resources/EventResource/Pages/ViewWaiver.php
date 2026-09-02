@@ -62,6 +62,7 @@ class ViewWaiver extends ViewRecord
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make([
                     Forms\Components\TextInput::make('title')

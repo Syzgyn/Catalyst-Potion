@@ -57,6 +57,7 @@ class EditWaiver extends EditRecord
     public function form(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 Section::make([
                     Forms\Components\TextInput::make('title')
@@ -66,6 +67,7 @@ class EditWaiver extends EditRecord
                         ->required()
                         ->columnSpanFull(),
                 ])
+                    ->columns(1)
                     ->relationship('waiver'),
             ]);
     }
