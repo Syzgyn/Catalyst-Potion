@@ -32,7 +32,7 @@ RUN ./configure \
     --enable-shared \
     ${EXT_CONFIGURE_OPTS} \
     ;
-RUN make -j $(nproc)
+RUN make
 RUN make install
 RUN cp "$(php-config --extension-dir)/gd.so" /tmp/gd.so
 RUN echo 'extension=gd.so' > /tmp/ext.ini

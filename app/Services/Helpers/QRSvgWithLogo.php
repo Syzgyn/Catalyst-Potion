@@ -19,10 +19,10 @@ class QRSvgWithLogo extends QRMarkupSVG
         $size = (int) ceil($this->moduleCount * $this->options->svgLogoScale);
 
         // we're calling QRMatrix::setLogoSpace() manually, so QROptions::$addLogoSpace has no effect here
-        $this->matrix->setLogoSpace($size - 5, $size);
+        // $this->matrix->setLogoSpace($size - 5, $size);
 
         $svg = parent::paths();
-        $svg .= $this->getLogo();
+        // $svg .= $this->getLogo();
         $svg .= $this->getText($this->options->topText, 7);
         $svg .= $this->getText($this->options->bottomText, 95);
 
