@@ -31,16 +31,60 @@ class ShiftResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        /** @var ?Team $team */
-        $team = $schema->getExtraAttributes()['team'] ?? null;
-        /** @var ?ShiftType $shiftType */
-        $shiftType = $schema->getExtraAttributes()['shiftType'] ?? null;
+        [$team, $shiftType] = self::resolveShiftFormContext($schema);
 
         $context = $team !== null
             ? ShiftFormContext::TeamCreate
             : ShiftFormContext::ShiftTypeCreate;
 
         return ShiftForm::configure($schema, $context, $team, $shiftType);
+    }
+
+    /**
+     * @return array{0: ?Team, 1: ?ShiftType}
+     */
+    protected static function resolveShiftFormContext(Schema $schema): array
+    {
+        $extraAttributes = $schema->getExtraAttributes();
+
+        /** @var ?Team $team */
+        $team = $extraAttributes['team'] ?? null;
+        /** @var ?ShiftType $shiftType */
+        $shiftType = $extraAttributes['shiftType'] ?? null;
+
+        if ($team !== null || $shiftType !== null) {
+            return [$team, $shiftType];
+        }
+
+        $route = request()->route();
+        if ($route === null) {
+            return [null, null];
+        }
+
+        $record = $route->parameter('record');
+        if ($record instanceof Shift) {
+            return [null, $record->shiftType];
+        }
+
+        if ($record instanceof ShiftType) {
+            return [null, $record];
+        }
+
+        if ($record instanceof Team) {
+            return [$record, null];
+        }
+
+        $shiftTypeParameter = $route->parameter('shift_type');
+        if ($shiftTypeParameter instanceof ShiftType) {
+            return [null, $shiftTypeParameter];
+        }
+
+        $teamParameter = $route->parameter('team');
+        if ($teamParameter instanceof Team) {
+            return [$teamParameter, null];
+        }
+
+        return [null, null];
     }
 
     public static function getRelations(): array

@@ -13,6 +13,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\ManageRelatedRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -63,7 +64,7 @@ class ManageShifts extends ManageRelatedRecords
                     ->sortable(),
             ])
             ->recordUrl(
-                fn (Shift $record): string => ShiftResource::getUrl('view', ['record' => $record], shouldGuessMissingParameters: true)
+                fn (Shift $record): string => ShiftResource::getRecordUrl('view', $record)
             )
             ->filters([
                 //
@@ -71,7 +72,10 @@ class ManageShifts extends ManageRelatedRecords
             ->headerActions([
             ])
             ->actions([
-                EditAction::make(),
+                ViewAction::make()
+                    ->url(fn (Shift $record): string => ShiftResource::getRecordUrl('view', $record)),
+                EditAction::make()
+                    ->url(fn (Shift $record): string => ShiftResource::getRecordUrl('edit', $record)),
                 ActionGroup::make([
                     DeleteAction::make(),
                 ]),
