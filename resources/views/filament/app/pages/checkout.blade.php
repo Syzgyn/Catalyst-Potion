@@ -43,7 +43,7 @@
 </script>
 @endscript
 
-<div wire:show="!checkoutComplete" wire:cloak>
+<div wire:show="!checkoutComplete" wire:cloak wire:poll.10s="assertCheckoutCartIsCurrent">
     @if ($checkoutContent)
         <div class="prose dark:prose-invert max-w-none">
             {!! str($checkoutContent)->sanitizeHtml() !!}

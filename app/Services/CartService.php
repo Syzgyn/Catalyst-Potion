@@ -9,8 +9,10 @@ use App\Models\Ticketing\CartItem;
 use App\Models\Ticketing\PurchasedTicket;
 use App\Models\User;
 use Exception;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use LogicException;
 
 class CartService
@@ -74,6 +76,125 @@ class CartService
         if ($carts->count() > 1) {
             throw new Exception('User has multiple carts');
         }
+    }
+
+    /**
+     * Start or resume checkout: at most one open Stripe session per user for a given selection.
+     *
+     * @param  array<array{id:int, quantity:int}>  $tickets
+     * @param  int[]  $reserved
+     */
+    public function beginCheckout(array $tickets, array $reserved = [], ?User $user = null): Cart
+    {
+        $user = $this->ensureUser($user);
+
+        $lock = Cache::lock('checkout:user:' . $user->id, 15);
+
+        try {
+            return $lock->block(5, fn () => $this->beginCheckoutWithinLock($tickets, $reserved, $user));
+        } catch (LockTimeoutException) {
+            abort(429, 'Checkout is busy. Please try again.');
+        }
+    }
+
+    /**
+     * @param  array<array{id:int, quantity:int}>  $tickets
+     * @param  int[]  $reserved
+     */
+    protected function beginCheckoutWithinLock(array $tickets, array $reserved, User $user): Cart
+    {
+        $active = $this->getActiveCart($user);
+
+        if (
+            $active
+            && $active->stripe_checkout_id
+            && $this->cartMatchesSelection($active, $tickets, $reserved)
+            && $this->checkoutSessionIsOpen($active)
+        ) {
+            return $active;
+        }
+
+        $this->expireAllUnexpiredCarts($user);
+        $cart = $this->createCartAndItems($tickets, $reserved);
+        $session = $this->stripeService->createCheckoutFromCart($cart);
+        $cart->setStripeCheckoutIdAndSave($session->id);
+
+        return $cart;
+    }
+
+    /**
+     * @param  array<array{id:int, quantity:int}>  $tickets
+     * @param  int[]  $reserved
+     */
+    protected function cartMatchesSelection(Cart $cart, array $tickets, array $reserved): bool
+    {
+        return $this->normalizeTicketSelection($tickets, $reserved) === $this->selectionFromCart($cart);
+    }
+
+    /**
+     * @param  array<array{id:int, quantity:int}>  $tickets
+     * @param  int[]  $reserved
+     *
+     * @return array{general: array<int, int>, reserved: int[]}
+     */
+    protected function normalizeTicketSelection(array $tickets, array $reserved): array
+    {
+        $general = [];
+
+        foreach ($tickets as $row) {
+            $quantity = (int) $row['quantity'];
+
+            if ($quantity > 0) {
+                $general[(int) $row['id']] = $quantity;
+            }
+        }
+
+        ksort($general);
+
+        $reservedIds = array_map(intval(...), $reserved);
+        sort($reservedIds);
+
+        return [
+            'general' => $general,
+            'reserved' => $reservedIds,
+        ];
+    }
+
+    /**
+     * @return array{general: array<int, int>, reserved: int[]}
+     */
+    protected function selectionFromCart(Cart $cart): array
+    {
+        $general = [];
+        $reserved = [];
+
+        foreach ($cart->items as $item) {
+            if ($item->reserved_ticket_id) {
+                $reserved[] = (int) $item->reserved_ticket_id;
+            } else {
+                $ticketTypeId = (int) $item->ticket_type_id;
+                $general[$ticketTypeId] = ($general[$ticketTypeId] ?? 0) + (int) $item->quantity;
+            }
+        }
+
+        ksort($general);
+        sort($reserved);
+
+        return [
+            'general' => $general,
+            'reserved' => $reserved,
+        ];
+    }
+
+    protected function checkoutSessionIsOpen(Cart $cart): bool
+    {
+        if (! $cart->stripe_checkout_id) {
+            return false;
+        }
+
+        $session = $this->stripeService->getCheckoutSession($cart->stripe_checkout_id);
+
+        return $session->status === 'open';
     }
 
     /**

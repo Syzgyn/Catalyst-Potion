@@ -14,7 +14,6 @@ use App\Models\Ticketing\Waiver;
 use App\Models\User;
 use App\Rules\TicketSaleRule;
 use App\Services\CartService;
-use App\Services\StripeService;
 use Carbon\Carbon;
 use Filament\Actions\Action as ActionsAction;
 use Filament\Forms\Components\Hidden;
@@ -117,6 +116,7 @@ class PurchaseTickets extends Page
                 type="submit"
                 size="sm"
                 wire:target="checkout"
+                wire:loading.attr="disabled"
             >
                 Checkout
             </x-filament::button>
@@ -238,7 +238,7 @@ class PurchaseTickets extends Page
             ->afterValidation($this->createCompletedWaiver(...));
     }
 
-    public function createCart(CartService $cartService, StripeService $stripeService): void
+    public function createCart(CartService $cartService): void
     {
         /**
          * We receive data in this format:
@@ -265,10 +265,7 @@ class PurchaseTickets extends Page
         })->toArray();
         $reserved = (new Collection($data['reserved'] ?? []))->filter(fn ($value) => $value === true)->keys()->toArray();
 
-        $cartService->expireAllUnexpiredCarts();
-        $cart = $cartService->createCartAndItems($tickets, $reserved);
-        $session = $stripeService->createCheckoutFromCart($cart);
-        $cart->setStripeCheckoutIdAndSave($session->id);
+        $cartService->beginCheckout($tickets, $reserved);
     }
 
     protected function createCompletedWaiver(): void

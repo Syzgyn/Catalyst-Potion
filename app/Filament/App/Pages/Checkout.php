@@ -31,6 +31,8 @@ class Checkout extends Page
 
     public ?string $checkoutCompleteContent;
 
+    public ?int $mountedCartId = null;
+
     public function mount(CartService $cartService, StripeService $stripeService): void
     {
         $this->cart = $cartService->getActiveCart();
@@ -40,6 +42,8 @@ class Checkout extends Page
 
             return;
         }
+
+        $this->mountedCartId = $this->cart->id;
 
         if (! $this->cart->stripe_checkout_id) {
             $this->cart->expire();
@@ -72,11 +76,51 @@ class Checkout extends Page
         $this->checkoutCompleteContent = $this->cart->event->checkoutCompleteContent->formattedContent ?? null;
     }
 
-    public function completeCheckout(string $sessionId, StripeService $stripeService, CheckoutService $checkoutService): void
+    public function assertCheckoutCartIsCurrent(CartService $cartService): void
     {
+        if ($this->checkoutComplete) {
+            return;
+        }
+
+        $active = $cartService->getActiveCart();
+
+        if (
+            ! $active
+            || $active->id !== $this->mountedCartId
+            || $active->stripe_checkout_id !== $this->checkoutId
+        ) {
+            $this->redirectToPurchaseWithSupersededCartNotice();
+        }
+    }
+
+    public function completeCheckout(
+        string $sessionId,
+        CartService $cartService,
+        StripeService $stripeService,
+        CheckoutService $checkoutService,
+    ): void {
+        $active = $cartService->getActiveCart();
+
+        if (! $active || $active->stripe_checkout_id !== $sessionId) {
+            $this->redirectToPurchaseWithSupersededCartNotice();
+
+            return;
+        }
+
         $this->checkoutComplete = true;
         $session = $stripeService->getCheckoutSession($sessionId);
         $checkoutService->resolveCompletedCheckoutSession($session);
+    }
+
+    protected function redirectToPurchaseWithSupersededCartNotice(): void
+    {
+        Notification::make()
+            ->title('Cart updated')
+            ->body('Your cart was updated elsewhere. Please review your order and checkout again.')
+            ->warning()
+            ->send();
+
+        $this->redirect(PurchaseTickets::getUrl());
     }
 
     public function cancelAction(): Action

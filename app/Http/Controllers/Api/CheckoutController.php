@@ -48,10 +48,11 @@ class CheckoutController extends Controller
 
     public function createAction(CheckoutCreateRequest $request): JsonResponse
     {
-        $this->cartService->expireAllUnexpiredCarts();
-        $cart = $this->cartService->createCartAndItems($request->input('tickets', []), $request->input('reserved', []));
-        $session = $this->stripeService->createCheckoutFromCart($cart);
-        $cart->setStripeCheckoutIdAndSave($session->id);
+        $cart = $this->cartService->beginCheckout(
+            $request->input('tickets', []),
+            $request->input('reserved', []),
+        );
+        $session = $this->stripeService->getCheckoutSession($cart->stripe_checkout_id);
 
         /** @var User $user */
         $user = auth()->user();
