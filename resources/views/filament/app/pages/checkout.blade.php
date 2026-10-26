@@ -55,7 +55,7 @@
         </x-notification-banner>
         {{ $this->cancelAction }}
     </div>
-    <div id="stripe-checkout">
+    <div id="stripe-checkout" wire:ignore>
     </div>
 </div>
 <div wire:show="checkoutComplete" wire:cloak>
