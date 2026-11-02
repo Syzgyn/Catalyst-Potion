@@ -22,7 +22,7 @@
     </div>
     {{-- Custom content from PageContent --}}
     @if ($event?->appDashboardContent)
-    <div class="prose dark:prose-invert max-w-none">
+    <div class="fi-prose max-w-none">
         {!! str($event?->appDashboardContent?->formattedContent)->sanitizeHtml() !!}
     </div>
     @elseif (Auth::user()->can('events.edit') && $event)

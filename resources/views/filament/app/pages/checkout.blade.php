@@ -45,7 +45,7 @@
 
 <div wire:show="!checkoutComplete" wire:cloak wire:poll.10s="assertCheckoutCartIsCurrent">
     @if ($checkoutContent)
-        <div class="prose dark:prose-invert max-w-none">
+        <div class="fi-prose max-w-none">
             {!! str($checkoutContent)->sanitizeHtml() !!}
         </div>
     @endif
@@ -63,7 +63,7 @@
         Your purchase was successful! You can view your tickets in your profile.
     </x-notification-banner>
     @if ($checkoutCompleteContent)
-        <div class="prose dark:prose-invert max-w-none">
+        <div class="fi-prose max-w-none">
             {!! str($checkoutCompleteContent)->sanitizeHtml() !!}
         </div>
     @endif

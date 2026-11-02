@@ -22,7 +22,7 @@
     >
         @if (!$hasVoted && $votingIsOpen)
             @if ($artGrantContent)
-                <div class="prose dark:prose-invert max-w-none">
+                <div class="fi-prose max-w-none">
                     {!! str($artGrantContent)->sanitizeHtml() !!}
                 </div>
             @endif

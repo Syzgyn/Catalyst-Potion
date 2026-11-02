@@ -14,7 +14,7 @@
     x-init="init()"
     >
         @if ($pageContent)
-            <div class="prose dark:prose-invert max-w-none">
+            <div class="fi-prose max-w-none">
                 {!! str($pageContent)->sanitizeHtml() !!}
             </div>
         @endif
