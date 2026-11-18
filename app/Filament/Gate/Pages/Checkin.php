@@ -327,6 +327,11 @@ class Checkin extends Page
                             ->pluck('legal_name', 'id')
                             ->toArray();
                     })
+                    ->getOptionLabelUsing(function ($value): ?string {
+                        $user = User::query()->find($value);
+
+                        return $user ? "{$user->legal_name} ({$user->email})" : null;
+                    })
                     ->autofocus()
                     ->hintAction($this->createNewUserAction()),
             ]);

@@ -94,6 +94,11 @@ class Search extends Page
                             ->pluck('legal_name', 'id')
                             ->toArray();
                     })
+                    ->getOptionLabelUsing(function ($value): ?string {
+                        $user = User::query()->find($value);
+
+                        return $user ? "{$user->legal_name} ({$user->email})" : null;
+                    })
                     ->afterStateUpdated(function (int $state) {
                         $user = User::findOrFail($state);
 
